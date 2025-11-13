@@ -481,67 +481,221 @@ def index():
 def upload_page():
     return render_template('upload.html')
 
+# @app.route('/analyze', methods=['POST'])
+# def analyze_content():
+#     if 'file' not in request.files:
+#         flash('No file selected', 'error')
+#         return redirect(url_for('upload_page'))
+    
+#     file = request.files['file']
+#     if file.filename == '':
+#         flash('No file selected', 'error')
+#         return redirect(url_for('upload_page'))
+    
+#     if file and allowed_file(file.filename):
+#         # Generate unique filename with timestamp
+#         original_filename = secure_filename(file.filename)
+#         unique_filename = generate_unique_filename(original_filename)
+#         file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+#         file.save(file_path)
+        
+#         file_extension = unique_filename.rsplit('.', 1)[1].lower()
+        
+#         # Extract text based on file type
+#         if file_extension == 'pdf':
+#             extracted_text = extract_text_from_pdf(file_path)
+#         else:
+#             extracted_text = extract_text_from_image(file_path)
+        
+#         # Basic engagement analysis
+#         analysis_results = analyze_engagement(extracted_text)
+        
+#         # Advanced analytics
+#         word_freq_words, word_freq_counts = generate_word_frequency(extracted_text, 15)
+#         wordcloud_image = generate_wordcloud_image(extracted_text)
+#         frequency_chart = generate_frequency_chart(word_freq_words, word_freq_counts)
+#         advanced_analysis = advanced_text_analysis(extracted_text)
+#         content_category, category_confidence = get_content_category(extracted_text)
+#         platform_analysis = platform_specific_analysis(extracted_text)
+#         optimal_times = optimal_posting_times()
+        
+#         trending_searches = get_all_trending_searches()
+#         zipped_data = list(zip(word_freq_words, word_freq_counts))
+#         return render_template('results.html', 
+#                             zipped_data=zipped_data,
+#                             trending_searches=trending_searches,
+#                             results=analysis_results,
+#                             text_preview=extracted_text[:1200] + "..." if len(extracted_text) > 1200 else extracted_text,
+#                             filename=unique_filename,
+#                             original_filename=original_filename,
+#                             # Advanced analytics
+#                             word_freq_words=word_freq_words,
+#                             word_freq_counts=word_freq_counts,
+#                             wordcloud_image=wordcloud_image,
+#                             frequency_chart=frequency_chart,
+#                             advanced_analysis=advanced_analysis,
+#                             content_category=content_category,
+#                             category_confidence=category_confidence,
+#                             platform_analysis=platform_analysis,
+#                             optimal_times=optimal_times,
+#                             extracted_text_length=len(extracted_text))
+    
+#     flash('Invalid file type. Please upload PDF, PNG, JPG, or JPEG files.', 'error')
+#     return redirect(url_for('upload_page'))
+
+def ensure_upload_folder():
+    """Ensure upload folder exists and is writable"""
+    upload_folder = app.config['UPLOAD_FOLDER']
+    if not os.path.exists(upload_folder):
+        try:
+            os.makedirs(upload_folder)
+            print(f"✓ Created upload folder: {upload_folder}")
+        except Exception as e:
+            print(f"✗ Failed to create upload folder: {e}")
+            return False
+    return True
+
 @app.route('/analyze', methods=['POST'])
 def analyze_content():
-    if 'file' not in request.files:
-        flash('No file selected', 'error')
-        return redirect(url_for('upload_page'))
-    
-    file = request.files['file']
-    if file.filename == '':
-        flash('No file selected', 'error')
-        return redirect(url_for('upload_page'))
-    
-    if file and allowed_file(file.filename):
-        # Generate unique filename with timestamp
-        original_filename = secure_filename(file.filename)
-        unique_filename = generate_unique_filename(original_filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-        file.save(file_path)
+    try:
+        print("=== ANALYZE ROUTE STARTED ===")
         
-        file_extension = unique_filename.rsplit('.', 1)[1].lower()
+        if 'file' not in request.files:
+            flash('No file selected', 'error')
+            return redirect(url_for('upload_page'))
         
-        # Extract text based on file type
-        if file_extension == 'pdf':
-            extracted_text = extract_text_from_pdf(file_path)
+        file = request.files['file']
+        print(f"File received: {file.filename}")
+        
+        if file.filename == '':
+            flash('No file selected', 'error')
+            return redirect(url_for('upload_page'))
+        
+        if file and allowed_file(file.filename):
+            # Generate unique filename with timestamp
+            original_filename = secure_filename(file.filename)
+            unique_filename = generate_unique_filename(original_filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            
+            print(f"Saving file to: {file_path}")
+            file.save(file_path)
+            
+            file_extension = unique_filename.rsplit('.', 1)[1].lower()
+            print(f"File extension: {file_extension}")
+            
+            # Extract text based on file type
+            if file_extension == 'pdf':
+                print("Extracting text from PDF...")
+                extracted_text = extract_text_from_pdf(file_path)
+            else:
+                print("Extracting text from image...")
+                extracted_text = extract_text_from_image(file_path)
+            
+            print(f"Extracted text length: {len(extracted_text)}")
+            print(f"First 100 chars: {extracted_text[:100]}")
+            
+            # Basic engagement analysis
+            print("Starting engagement analysis...")
+            analysis_results = analyze_engagement(extracted_text)
+            
+            # Advanced analytics
+            print("Starting advanced analytics...")
+            word_freq_words, word_freq_counts = generate_word_frequency(extracted_text, 15)
+            wordcloud_image = generate_wordcloud_image(extracted_text)
+            frequency_chart = generate_frequency_chart(word_freq_words, word_freq_counts)
+            advanced_analysis = advanced_text_analysis(extracted_text)
+            content_category, category_confidence = get_content_category(extracted_text)
+            platform_analysis = platform_specific_analysis(extracted_text)
+            optimal_times = optimal_posting_times()
+            
+            trending_searches = get_all_trending_searches()
+            zipped_data = list(zip(word_freq_words, word_freq_counts))
+            
+            print("=== ANALYSIS COMPLETED SUCCESSFULLY ===")
+            
+            return render_template('results.html', 
+                                zipped_data=zipped_data,
+                                trending_searches=trending_searches,
+                                results=analysis_results,
+                                text_preview=extracted_text[:1200] + "..." if len(extracted_text) > 1200 else extracted_text,
+                                filename=unique_filename,
+                                original_filename=original_filename,
+                                # Advanced analytics
+                                word_freq_words=word_freq_words,
+                                word_freq_counts=word_freq_counts,
+                                wordcloud_image=wordcloud_image,
+                                frequency_chart=frequency_chart,
+                                advanced_analysis=advanced_analysis,
+                                content_category=content_category,
+                                category_confidence=category_confidence,
+                                platform_analysis=platform_analysis,
+                                optimal_times=optimal_times,
+                                extracted_text_length=len(extracted_text))
         else:
-            extracted_text = extract_text_from_image(file_path)
+            flash('Invalid file type. Please upload PDF, PNG, JPG, or JPEG files.', 'error')
+            return redirect(url_for('upload_page'))
+            
+    except Exception as e:
+        print("=== ERROR IN ANALYZE ROUTE ===")
+        print(f"Error type: {type(e).__name__}")
+        print(f"Error message: {str(e)}")
+        print("Traceback:")
+        traceback.print_exc()
+        print("==============================")
         
-        # Basic engagement analysis
-        analysis_results = analyze_engagement(extracted_text)
+        flash(f'Analysis failed: {str(e)}', 'error')
+        return redirect(url_for('upload_page'))
+
+@app.route('/debug')
+def debug_page():
+    """Simple debug route to test basic functionality"""
+    try:
+        # Test NLTK
+        test_text = "This is a test sentence for social media analysis."
+        words = word_tokenize(test_text)
         
-        # Advanced analytics
-        word_freq_words, word_freq_counts = generate_word_frequency(extracted_text, 15)
-        wordcloud_image = generate_wordcloud_image(extracted_text)
-        frequency_chart = generate_frequency_chart(word_freq_words, word_freq_counts)
-        advanced_analysis = advanced_text_analysis(extracted_text)
-        content_category, category_confidence = get_content_category(extracted_text)
-        platform_analysis = platform_specific_analysis(extracted_text)
-        optimal_times = optimal_posting_times()
+        # Test TextBlob
+        blob = TextBlob(test_text)
         
-        trending_searches = get_all_trending_searches()
-        zipped_data = list(zip(word_freq_words, word_freq_counts))
-        return render_template('results.html', 
-                            zipped_data=zipped_data,
-                            trending_searches=trending_searches,
-                            results=analysis_results,
-                            text_preview=extracted_text[:1200] + "..." if len(extracted_text) > 1200 else extracted_text,
-                            filename=unique_filename,
-                            original_filename=original_filename,
-                            # Advanced analytics
-                            word_freq_words=word_freq_words,
-                            word_freq_counts=word_freq_counts,
-                            wordcloud_image=wordcloud_image,
-                            frequency_chart=frequency_chart,
-                            advanced_analysis=advanced_analysis,
-                            content_category=content_category,
-                            category_confidence=category_confidence,
-                            platform_analysis=platform_analysis,
-                            optimal_times=optimal_times,
-                            extracted_text_length=len(extracted_text))
-    
-    flash('Invalid file type. Please upload PDF, PNG, JPG, or JPEG files.', 'error')
-    return redirect(url_for('upload_page'))
+        return jsonify({
+            'status': 'success',
+            'nltk_working': len(words) > 0,
+            'textblob_working': blob.sentiment.polarity != 0,
+            'message': 'Basic functionality test passed'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': str(e),
+            'error_type': type(e).__name__
+        }), 500
+
+# Add these imports at the top if missing
+import traceback
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Fix for NLTK data path issues
+def setup_nltk():
+    try:
+        nltk.data.find('tokenizers/punkt')
+    except LookupError:
+        nltk.download('punkt')
+    try:
+        nltk.data.find('corpora/stopwords')
+    except LookupError:
+        nltk.download('stopwords')
+    try:
+        nltk.data.find('taggers/averaged_perceptron_tagger')
+    except LookupError:
+        nltk.download('averaged_perceptron_tagger')
+
+# Call this function before using NLTK
+setup_nltk()
+
+
 
 @app.route('/api/copy-hashtags', methods=['POST'])
 def copy_hashtags():
