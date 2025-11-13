@@ -24,30 +24,25 @@ import numpy as np
 from wordcloud import WordCloud
 from dotenv import load_dotenv
 
+# Load environment variables
+load_dotenv()
 
-import os
-
-# Configure Tesseract for Render
+# Configure Tesseract for Render vs Local Development
 if os.environ.get('RENDER'):  # Check if running on Render
     pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+    print("✓ Tesseract configured for Render environment")
 else:
-    # Local development
+    # Local development - Windows path
     try:
         pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+        print("✓ Tesseract configured for local development")
     except:
-        pass
+        print("⚠ Tesseract not found - OCR may not work")
 
 # Download NLTK data
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('averaged_perceptron_tagger')
-
-# Set Tesseract path for Windows (optional for Render)
-try:
-    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-except:
-    # On Render, Tesseract should be available in PATH
-    pass
+nltk.download('punkt', quiet=True)
+nltk.download('stopwords', quiet=True)
+nltk.download('averaged_perceptron_tagger', quiet=True)
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
@@ -113,13 +108,16 @@ def extract_text_from_pdf(file_path):
 
 def extract_text_from_image(file_path):
     try:
+        # Test if Tesseract is available
+        pytesseract.get_tesseract_version()
+        
         image = Image.open(file_path)
         # Enhance image for better OCR
         image = image.convert('L')  # Convert to grayscale
         text = pytesseract.image_to_string(image)
         return text.strip() if text.strip() else "No text could be extracted from the image"
     except Exception as e:
-        return f"Error extracting image text: {str(e)}"
+        return f"OCR not available: {str(e)}. Please ensure Tesseract is installed on the server."
 
 def generate_word_frequency(text, top_n=15):
     """Generate word frequency analysis"""
@@ -506,8 +504,6 @@ def analyze_content():
         platform_analysis = platform_specific_analysis(extracted_text)
         optimal_times = optimal_posting_times()
         
-        # Removed all database operations
-        
         trending_searches = get_all_trending_searches()
         zipped_data = list(zip(word_freq_words, word_freq_counts))
         return render_template('results.html', 
@@ -556,12 +552,10 @@ def internal_error(error):
 
 def get_twitter_trends():
     """Get Twitter trending topics"""
-    # Fallback: Mock trending topics
     return ["AI Innovations", "Tech News", "Digital Marketing", "Content Creation", "Social Media Tips"]
 
 def get_google_trends():
     """Get Google trending searches"""
-    # Fallback trends
     return ["Latest Tech", "Business Strategies", "Market Trends", "Innovation", "Digital Transformation"]
 
 def get_instagram_trends():
@@ -601,14 +595,12 @@ def get_all_trending_searches():
         }
     }
 
-# New route for trending searches only
 @app.route('/api/trends')
 def get_trends_api():
     """API endpoint to get trending searches"""
     trends = get_all_trending_searches()
     return jsonify(trends)
 
-# New route for trends page
 @app.route('/trends')
 def trends_page():
     """Page showing all trending searches"""
@@ -616,17 +608,18 @@ def trends_page():
     return render_template('trends.html', trending_searches=trending_searches)
 
 if __name__ == '__main__':
+    # Ensure upload folder exists
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
+        print(f"✓ Created upload folder: {app.config['UPLOAD_FOLDER']}")
     
     # Test Tesseract installation
     try:
         pytesseract.get_tesseract_version()
         print("✓ Tesseract OCR is properly configured")
-    except:
-        print("✗ Tesseract OCR is not installed or not in PATH")
-        print("Please install Tesseract OCR from: https://github.com/UB-Mannheim/tesseract/wiki")
+    except Exception as e:
+        print(f"⚠ Tesseract OCR issue: {e}")
     
-    print("✓ Social Media Content Analyzer is running!")
-    print("✓ Access the application at: http://localhost:5000")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    print("🚀 Social Media Content Analyzer is running!")
+    print("🌐 Access the application at: http://localhost:5000")
+    app.run(debug=False, host='0.0.0.0', port=5000)
