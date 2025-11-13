@@ -302,6 +302,21 @@ def platform_specific_analysis(text):
     
     return platforms
 
+# Add detailed error handling
+@app.errorhandler(Exception)
+def handle_exception(e):
+    """Handle all unhandled exceptions"""
+    error_message = f"Exception: {str(e)}"
+    error_traceback = traceback.format_exc()
+    
+    print("=== ERROR DETAILS ===")
+    print(error_message)
+    print(error_traceback)
+    print("=====================")
+    
+    flash('An internal server error occurred. Please try again.', 'error')
+    return redirect(url_for('upload_page'))
+
 def optimal_posting_times():
     """Suggest optimal posting times based on analytics"""
     return {
