@@ -24,6 +24,19 @@ import numpy as np
 from wordcloud import WordCloud
 from dotenv import load_dotenv
 
+
+import os
+
+# Configure Tesseract for Render
+if os.environ.get('RENDER'):  # Check if running on Render
+    pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+else:
+    # Local development
+    try:
+        pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+    except:
+        pass
+
 # Download NLTK data
 nltk.download('punkt')
 nltk.download('stopwords')
